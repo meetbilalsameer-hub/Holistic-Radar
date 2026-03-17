@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Lead {
+  id             String            @id @default(cuid())
+  name           String
+  email          String
+  company        String?
+  website        String
+  monthlyTraffic String?
+  monthlyRevenue String?
+  challenge      String?
+  createdAt      DateTime          @default(now())
+  analyses       WebsiteAnalysis[]
+}
+
+model WebsiteAnalysis {
+  id             String               @id @default(cuid())
+  url            String
+  businessType   String?
+  industry       String?
+  market         String?
+  growthGoal     String?
+  primaryOffer   String?
+  overallScore   Float
+  overallSummary String               @db.Text
+  rawExtraction  Json
+  claudeResponse Json
+  status         String               @default("completed")
+  createdAt      DateTime             @default(now())
+  leadId         String?
+  lead           Lead?                @relation(fields: [leadId], references: [id])
+  layerScores    AnalysisLayerScore[]
+}
+
+model AnalysisLayerScore {
+  id             String          @id @default(cuid())
+  layerNumber    Int
+  layerName      String
+  score          Float
+  label          String
+  insight        String          @db.Text
+  strengths      Json
+  weaknesses     Json
+  recommendation String          @db.Text
+  analysisId     String
+  analysis       WebsiteAnalysis @relation(fields: [analysisId], references: [id])
+}
+
+model StrategyCallRequest {
+  id         String   @id @default(cuid())
+  name       String
+  email      String
+  company    String?
+  message    String?  @db.Text
+  analysisId String?
+  createdAt  DateTime @default(now())
+}
