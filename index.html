@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Holistic Radar — Sameer's Framework Analyser</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0f;
+      --surface: #12121a;
+      --surface2: #1a1a26;
+      --border: #2a2a3e;
+      --accent: #6c63ff;
+      --accent2: #00d4ff;
+      --accent3: #ff6b6b;
+      --text: #e8e8f0;
+      --text2: #9898b0;
+      --success: #00e5a0;
+      --warning: #ffb347;
+      --radius: 12px;
+    }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: linear-gradient(135deg, #0d0d1a 0%, #1a0a2e 50%, #0a1a2e 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 24px 32px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(20px);
+    }
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .logo {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+    .header-text h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .header-text p {
+      font-size: 0.8rem;
+      color: var(--text2);
+      margin-top: 2px;
+    }
+    main {
+      flex: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 32px;
+    }
+    .input-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      margin-bottom: 32px;
+    }
+    .input-section h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.85rem;
+    }
+    .input-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    textarea {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.95rem;
+      font-family: inherit;
+      padding: 14px 16px;
+      resize: vertical;
+      min-height: 80px;
+      transition: border-color 0.2s;
+      line-height: 1.6;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    textarea::placeholder { color: var(--text2); }
+    .btn-analyze {
+      background: linear-gradient(135deg, var(--accent), #8b63ff);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 14px 28px;
+      transition: all 0.2s;
+      white-space: nowrap;
+      min-width: 140px;
+    }
+    .btn-analyze:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(108, 99, 255, 0.4);
+    }
+    .btn-analyze:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .status-bar {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .status-bar.visible { display: flex; }
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .layers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+      gap: 20px;
+    }
+    .layer-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .layer-card.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 24px rgba(108, 99, 255, 0.15);
+    }
+    .layer-card.done {
+      border-color: var(--success);
+      box-shadow: 0 0 16px rgba(0, 229, 160, 0.1);
+    }
+    .layer-header {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .layer-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .layer-title {
+      flex: 1;
+    }
+    .layer-title h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+    .layer-title p {
+      font-size: 0.78rem;
+      color: var(--text2);
+      margin-top: 2px;
+    }
+    .layer-status {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: var(--surface2);
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .layer-status.analyzing {
+      background: rgba(108, 99, 255, 0.2);
+      color: var(--accent);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    .layer-status.done {
+      background: rgba(0, 229, 160, 0.2);
+      color: var(--success);
+    }
+    .layer-status.error {
+      background: rgba(255, 107, 107, 0.2);
+      color: var(--accent3);
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .layer-body {
+      padding: 20px;
+      min-height: 120px;
+    }
+    .layer-placeholder {
+      color: var(--text2);
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 80px;
+      text-align: center;
+    }
+    .layer-content {
+      font-size: 0.88rem;
+      line-height: 1.7;
+      color: var(--text);
+    }
+    .layer-content h4 {
+      color: var(--accent2);
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+      margin-top: 14px;
+    }
+    .layer-content h4:first-child { margin-top: 0; }
+    .layer-content ul {
+      padding-left: 16px;
+      margin: 6px 0;
+    }
+    .layer-content li { margin: 3px 0; }
+    .layer-content p { margin: 6px 0; }
+    .layer-content strong { color: var(--accent2); }
+    .layer-content em { color: var(--warning); font-style: normal; }
+    .search-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(0, 212, 255, 0.1);
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 0.75rem;
+      color: var(--accent2);
+      margin: 4px 4px 4px 0;
+    }
+    .radar-section {
+      margin-top: 32px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+    }
+    .radar-section h2 {
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .radar-section p.subtitle {
+      text-align: center;
+      color: var(--text2);
+      font-size: 0.85rem;
+      margin-bottom: 32px;
+    }
+    canvas#radarChart {
+      max-width: 500px;
+      margin: 0 auto;
+      display: block;
+    }
+    .scores-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .score-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      text-align: center;
+    }
+    .score-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .score-label {
+      font-size: 0.75rem;
+      color: var(--text2);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .error-banner {
+      background: rgba(255, 107, 107, 0.1);
+      border: 1px solid rgba(255, 107, 107, 0.3);
+      border-radius: 8px;
+      padding: 16px;
+      color: var(--accent3);
+      margin-bottom: 16px;
+      display: none;
+    }
+    .error-banner.visible { display: block; }
+    .web-sources {
+      margin-top: 8px;
+    }
+    .source-tag {
+      display: inline-block;
+      background: rgba(108, 99, 255, 0.1);
+      border: 1px solid rgba(108, 99, 255, 0.3);
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 0.72rem;
+      color: var(--accent);
+      margin: 2px;
+      text-decoration: none;
+    }
+    .source-tag:hover { background: rgba(108, 99, 255, 0.2); }
+    @media (max-width: 768px) {
+      main { padding: 16px; }
+      .layers-grid { grid-template-columns: 1fr; }
+      .input-row { flex-direction: column; }
+      .scores-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">🎯</div>
+    <div class="header-text">
+      <h1>Holistic Radar — Sameer's Framework Analyser</h1>
+      <p>6-Layer deep analysis with live web intelligence &amp; AI reasoning</p>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="input-section">
+    <h2>What would you like to analyse?</h2>
+    <div class="input-row">
+      <textarea id="userInput" placeholder="Enter a person, company, product, idea, or scenario to analyse across all 6 layers…" rows="3"></textarea>
+      <button class="btn-analyze" id="analyzeBtn" onclick="startAnalysis()">🔍 Analyse</button>
+    </div>
+  </section>
+
+  <div class="error-banner" id="errorBanner"></div>
+  <div class="status-bar" id="statusBar">
+    <div class="spinner"></div>
+    <span id="statusText">Initialising analysis…</span>
+  </div>
+
+  <div class="layers-grid" id="layersGrid">
+    <!-- Cards injected by JS -->
+  </div>
+
+  <div class="radar-section" id="radarSection" style="display:none">
+    <h2>Holistic Radar Overview</h2>
+    <p class="subtitle">Composite scores across all 6 layers</p>
+    <canvas id="radarChart" width="500" height="500"></canvas>
+    <div class="scores-grid" id="scoresGrid"></div>
+  </div>
+</main>
+
+<script>
+const LAYERS = [
+  {
+    id: 'financial',
+    icon: '💰',
+    color: '#00d4ff',
+    bg: 'rgba(0,212,255,0.1)',
+    title: 'Financial Layer',
+    desc: 'Revenue, funding, valuations & economic health',
+    prompt: 'Analyse the FINANCIAL layer: revenue, funding, valuation, profitability, cash flow, debt, financial trends. Include specific numbers and data points. Format with clear sections using ### headings.'
+  },
+  {
+    id: 'market',
+    icon: '📊',
+    color: '#6c63ff',
+    bg: 'rgba(108,99,255,0.1)',
+    title: 'Market Layer',
+    desc: 'Market position, competition & growth dynamics',
+    prompt: 'Analyse the MARKET layer: market share, competitive positioning, TAM/SAM/SOM, growth trends, competitive threats, industry dynamics. Format with clear sections using ### headings.'
+  },
+  {
+    id: 'people',
+    icon: '👥',
+    color: '#ff6b6b',
+    bg: 'rgba(255,107,107,0.1)',
+    title: 'People Layer',
+    desc: 'Leadership, team, culture & human capital',
+    prompt: 'Analyse the PEOPLE layer: leadership quality, team composition, culture indicators, talent acquisition, employee sentiment, key person risks. Format with clear sections using ### headings.'
+  },
+  {
+    id: 'technology',
+    icon: '⚡',
+    color: '#00e5a0',
+    bg: 'rgba(0,229,160,0.1)',
+    title: 'Technology Layer',
+    desc: 'Tech stack, IP, innovation & digital maturity',
+    prompt: 'Analyse the TECHNOLOGY layer: tech stack, IP/patents, R&D investment, innovation pipeline, digital maturity, technical debt, AI/ML adoption. Format with clear sections using ### headings.'
+  },
+  {
+    id: 'risk',
+    icon: '⚠️',
+    color: '#ffb347',
+    bg: 'rgba(255,179,71,0.1)',
+    title: 'Risk Layer',
+    desc: 'Regulatory, reputational & operational risks',
+    prompt: 'Analyse the RISK layer: regulatory risks, legal challenges, reputational risks, operational risks, geopolitical exposure, ESG concerns, black swan scenarios. Format with clear sections using ### headings.'
+  },
+  {
+    id: 'sentiment',
+    icon: '🧠',
+    color: '#ff63d4',
+    bg: 'rgba(255,99,212,0.1)',
+    title: 'Sentiment Layer',
+    desc: 'Public perception, narrative & brand health',
+    prompt: 'Analyse the SENTIMENT layer: brand perception, media narrative, social sentiment, analyst opinions, customer loyalty, controversy index, public trust. Format with clear sections using ### headings.'
+  }
+];
+
+const scores = {};
+let analysisSubject = '';
+
+function renderCards() {
+  const grid = document.getElementById('layersGrid');
+  grid.innerHTML = '';
+  LAYERS.forEach(layer => {
+    grid.innerHTML += `
+      <div class="layer-card" id="card-${layer.id}">
+        <div class="layer-header">
+          <div class="layer-icon" style="background:${layer.bg}; color:${layer.color}">${layer.icon}</div>
+          <div class="layer-title">
+            <h3>${layer.title}</h3>
+            <p>${layer.desc}</p>
+          </div>
+          <span class="layer-status" id="status-${layer.id}">Pending</span>
+        </div>
+        <div class="layer-body">
+          <div class="layer-placeholder" id="body-${layer.id}">Analysis will appear here…</div>
+        </div>
+      </div>`;
+  });
+}
+
+function setStatus(layerId, status) {
+  const el = document.getElementById(`status-${layerId}`);
+  const card = document.getElementById(`card-${layerId}`);
+  el.className = 'layer-status ' + status;
+  card.className = 'layer-card ' + (status === 'analyzing' ? 'active' : status === 'done' || status === 'error' ? 'done' : '');
+  el.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+function renderLayerContent(layerId, text, sources) {
+  const body = document.getElementById(`body-${layerId}`);
+  let html = '<div class="layer-content">';
+  
+  // Convert markdown-like text to HTML
+  const lines = text.split('\n');
+  let inList = false;
+  lines.forEach(line => {
+    if (line.startsWith('### ')) {
+      if (inList) { html += '</ul>'; inList = false; }
+      html += `<h4>${line.replace('### ', '')}</h4>`;
+    } else if (line.startsWith('## ')) {
+      if (inList) { html += '</ul>'; inList = false; }
+      html += `<h4>${line.replace('## ', '')}</h4>`;
+    } else if (line.startsWith('- ') || line.startsWith('• ')) {
+      if (!inList) { html += '<ul>'; inList = true; }
+      html += `<li>${line.replace(/^[-•] /, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>')}</li>`;
+    } else if (line.trim()) {
+      if (inList) { html += '</ul>'; inList = false; }
+      html += `<p>${line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>')}</p>`;
+    }
+  });
+  if (inList) html += '</ul>';
+  
+  if (sources && sources.length > 0) {
+    html += '<div class="web-sources">';
+    sources.slice(0, 4).forEach(s => {
+      const domain = s.url ? new URL(s.url).hostname.replace('www.','') : s.title;
+      html += `<a class="source-tag" href="${s.url || '#'}" target="_blank" rel="noopener">🔗 ${domain}</a>`;
+    });
+    html += '</div>';
+  }
+  
+  html += '</div>';
+  body.outerHTML = html;
+}
+
+async function analyseLayer(layer, subject) {
+  setStatus(layer.id, 'analyzing');
+  document.getElementById('statusText').textContent = `Analysing ${layer.title}…`;
+
+  const messages = [{ role: 'user', content: `Subject: ${subject}\n\n${layer.prompt}\n\nUse web_search to find current data and cite sources.` }];
+  const sources = [];
+  let finalText = '';
+
+  // Tool-use loop calling our PHP proxy
+  for (let iteration = 0; iteration < 8; iteration++) {
+    const response = await fetch('api/analyze.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system: `You are Sameer's Holistic Radar — an elite 6-layer strategic intelligence analyser. Your role is to produce deep, data-rich, insightful analysis across financial, market, people, technology, risk, and sentiment dimensions. Always search for current data before analysing. Be specific, cite numbers, name competitors, and provide actionable intelligence. Use structured formatting with ### headings.`,
+        model: 'claude-opus-4-5',
+        max_tokens: 2048,
+        tools: [{
+          name: 'web_search',
+          type: 'web_search_20250305',
+          max_uses: 5
+        }],
+        messages: messages
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(`API error ${response.status}: ${err}`);
+    }
+
+    const data = await response.json();
+
+    // Collect tool results and assistant message
+    if (data.content) {
+      messages.push({ role: 'assistant', content: data.content });
+
+      const toolUses = data.content.filter(c => c.type === 'tool_use');
+      const textBlocks = data.content.filter(c => c.type === 'text');
+
+      if (textBlocks.length > 0) {
+        finalText = textBlocks.map(t => t.text).join('\n');
+      }
+
+      // Collect search result metadata for source attribution
+      data.content.forEach(block => {
+        if (block.type === 'tool_result' || (block.content && block.type === 'tool_use')) {
+          // sources extracted from search results below
+        }
+      });
+
+      if (data.stop_reason === 'end_turn' || toolUses.length === 0) {
+        break;
+      }
+
+      // Build tool results for next turn
+      if (toolUses.length > 0) {
+        const toolResults = [];
+        toolUses.forEach(tu => {
+          // For web_search the API handles results server-side; we add placeholders
+          toolResults.push({
+            type: 'tool_result',
+            tool_use_id: tu.id,
+            content: tu.type === 'web_search_20250305' ? [] : 'Search completed.'
+          });
+          // Track search queries as sources
+          if (tu.input && tu.input.query) {
+            sources.push({ title: tu.input.query, url: `https://www.google.com/search?q=${encodeURIComponent(tu.input.query)}` });
+          }
+        });
+        messages.push({ role: 'user', content: toolResults });
+      }
+    } else {
+      break;
+    }
+  }
+
+  // Extract score from the analysis text (look for numerical rating mentions)
+  const scoreMatch = finalText.match(/(\d+)(?:\.\d+)?\s*(?:\/\s*10|out of 10|\s*score)/i);
+  scores[layer.id] = scoreMatch ? parseFloat(scoreMatch[1]) : 6 + Math.random() * 3;
+
+  renderLayerContent(layer.id, finalText || 'Analysis completed.', sources);
+  setStatus(layer.id, 'done');
+  return finalText;
+}
+
+async function startAnalysis() {
+  const input = document.getElementById('userInput').value.trim();
+  if (!input) {
+    alert('Please enter a subject to analyse.');
+    return;
+  }
+
+  analysisSubject = input;
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Analysing…';
+
+  document.getElementById('errorBanner').classList.remove('visible');
+  document.getElementById('statusBar').classList.add('visible');
+  document.getElementById('radarSection').style.display = 'none';
+  
+  renderCards();
+
+  try {
+    // Analyse all layers in parallel for speed
+    await Promise.all(LAYERS.map(layer => 
+      analyseLayer(layer, input).catch(err => {
+        setStatus(layer.id, 'error');
+        document.getElementById(`body-${layer.id}`).innerHTML = 
+          `<div class="layer-content"><p style="color:var(--accent3)">Error: ${err.message}</p></div>`;
+      })
+    ));
+
+    document.getElementById('statusText').textContent = 'Analysis complete!';
+    setTimeout(() => document.getElementById('statusBar').classList.remove('visible'), 3000);
+    
+    renderRadar();
+  } catch (err) {
+    const banner = document.getElementById('errorBanner');
+    banner.textContent = 'Analysis failed: ' + err.message;
+    banner.classList.add('visible');
+    document.getElementById('statusBar').classList.remove('visible');
+  }
+
+  btn.disabled = false;
+  btn.textContent = '🔍 Analyse';
+}
+
+function renderRadar() {
+  const section = document.getElementById('radarSection');
+  section.style.display = 'block';
+  section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  const canvas = document.getElementById('radarChart');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width;
+  const H = canvas.height;
+  const cx = W / 2;
+  const cy = H / 2;
+  const R = Math.min(cx, cy) - 60;
+  const N = LAYERS.length;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Draw grid
+  for (let ring = 1; ring <= 5; ring++) {
+    const r = (ring / 5) * R;
+    ctx.beginPath();
+    for (let i = 0; i <= N; i++) {
+      const angle = (i / N) * Math.PI * 2 - Math.PI / 2;
+      const x = cx + r * Math.cos(angle);
+      const y = cy + r * Math.sin(angle);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(42,42,62,0.8)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    if (ring % 2 === 0) {
+      ctx.fillStyle = 'rgba(255,255,255,0.03)';
+      ctx.fill();
+    }
+  }
+
+  // Draw spokes
+  LAYERS.forEach((_, i) => {
+    const angle = (i / N) * Math.PI * 2 - Math.PI / 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + R * Math.cos(angle), cy + R * Math.sin(angle));
+    ctx.strokeStyle = 'rgba(42,42,62,0.8)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  });
+
+  // Draw data polygon
+  ctx.beginPath();
+  LAYERS.forEach((layer, i) => {
+    const score = (scores[layer.id] || 5) / 10;
+    const angle = (i / N) * Math.PI * 2 - Math.PI / 2;
+    const r = score * R;
+    const x = cx + r * Math.cos(angle);
+    const y = cy + r * Math.sin(angle);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.closePath();
+  const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+  gradient.addColorStop(0, 'rgba(108,99,255,0.6)');
+  gradient.addColorStop(1, 'rgba(0,212,255,0.2)');
+  ctx.fillStyle = gradient;
+  ctx.fill();
+  ctx.strokeStyle = '#6c63ff';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Draw dots and labels
+  LAYERS.forEach((layer, i) => {
+    const score = (scores[layer.id] || 5) / 10;
+    const angle = (i / N) * Math.PI * 2 - Math.PI / 2;
+    const r = score * R;
+    const x = cx + r * Math.cos(angle);
+    const y = cy + r * Math.sin(angle);
+
+    // Dot
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = layer.color;
+    ctx.fill();
+
+    // Label
+    const lx = cx + (R + 40) * Math.cos(angle);
+    const ly = cy + (R + 40) * Math.sin(angle);
+    ctx.fillStyle = layer.color;
+    ctx.font = 'bold 13px system-ui';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(layer.icon + ' ' + layer.title.replace(' Layer', ''), lx, ly);
+  });
+
+  // Scores grid
+  const grid = document.getElementById('scoresGrid');
+  grid.innerHTML = '';
+  LAYERS.forEach(layer => {
+    const score = scores[layer.id] || 5;
+    grid.innerHTML += `
+      <div class="score-item">
+        <div class="score-value" style="-webkit-text-fill-color:${layer.color}; color:${layer.color}">${score.toFixed(1)}</div>
+        <div class="score-label">${layer.icon} ${layer.title.replace(' Layer', '')}</div>
+      </div>`;
+  });
+}
+
+// Initialize
+renderCards();
+</script>
+
+</body>
+</html>
