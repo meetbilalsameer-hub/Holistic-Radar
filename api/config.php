@@ -9,4 +9,4 @@
  * Keep this file private — never commit real API keys to public repos.
  */
 
-define('ANTHROPIC_API_KEY', 'YOUR_API_KEY_HERE');
+define('ANTHROPIC_API_KEY', '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');
